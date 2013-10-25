@@ -23,7 +23,31 @@ body {
 	padding-right: 10px;
 }
 
-.botomButtonsDiv
+.bottomButtonsDiv
 {
 
+}
+
+.genderContainer .ui-slider-switch 
+{ 
+	width: 100px; /*TODO: doesn't work for all device configurations (screen sizes, etc)*/
+}
+.genderContainer .ui-btn-down-c
+{ 
+	background: #fa6daa;
+	color: #ffffff;
+	text-shadow: 0 1px 0 #E24080;
+}
+.modalWindow
+{
+	width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 1500;
+    background: white;
+    opacity: 0.7;
+}
+.ui-loader
+{
+	z-index: 1501;
 }

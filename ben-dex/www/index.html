@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -30,8 +30,8 @@
 			<h1>Pokedex</h1>
 		</div>
 		<div id="divPkmnListBody" data-role="body" class="standardBody" style="padding-top: 15px;">
-			<a href="#pkmnDetails" data-role="button" data-mini="true" onclick="app.blankPokemonInfo()">Add new entry</a>
-			<ul id="ulPokedexList" data-role='listview' data-inset='true' class='pokedexList'>
+			<a href="#pkmnDetails" data-role="button" data-mini="true" data-transition="fade" onclick="app.blankPokemonInfo()">Add new species</a>
+			<ul id="ulPokedexList" data-role='listview' data-inset='true' data-split-theme="c" class='pokedexList'>
 				<!--data-filter='true'-->
 			</ul>
 		</div>
@@ -66,15 +66,66 @@
 				<select name="selectType2" id="selectType2" data-role="select">
 				</select>
 			</div>
-			<div data-role="fieldcontain" class="botomButtonsDiv">
-				<a data-role="button" data-theme="b" href="#main" onclick="app.savePokemonInfo()">Submit</a>
-				<a data-role="button" href="#main">Cancel</a>
+			<div data-role="fieldcontain" class="bottomButtonsDiv">
+				<a data-role="button" data-theme="b" data-transition="fade" href="#main" onclick="app.savePokemonInfo()">Submit</a>
+				<a data-role="button" href="#main" data-transition="fade">Cancel</a>
 			</div>
 		</div>
 	</div>
+
+	<div data-role="page" id="specimenList">
+		<div data-role="header">
+			<a href="#main" data-icon="arrow-l" data-transition="slidefade" data-direction="reverse">Back</a>
+			<h1 id="specimenListHeader">Specimens</h1>
+		</div>
+		<div data-role="body" class="standardBody">
+			<input type="hidden" id="hidCurSpeciesForSpecimens" name="curSpeciesForSpecimens" />
+			<a href="#specimenDetails" data-role="button" data-mini="true" data-transition="fade" onclick="app.blankSpecimenInfo()">New specimen</a>
+			<ul id="ulSpecimenList" data-role='listview' data-inset='true' class='pokedexList'>
+				<!--data-filter='true'-->
+			</ul>
+		</div>
+	</div>
+
+	<div data-role="page" id="specimenDetails">
+		<div data-role="header">
+			<h1 id="specimenDetailsHeader"></h1>
+		</div>
+		<div data-role="body" class="standardBody">
+			<input type="hidden" id="hidCurSpecimenId" name="hidCurSpecimenId" />
+			<div data-role="fieldcontain">
+				<label for="txtNickname">Nickname:</label>
+				<input type="text" name="nickname" id="txtNickname" />
+			</div>
+			<div data-role="fieldcontain" class="genderContainer">
+				<label for="toggleGender">Gender:</label>
+				<select name="toggleGender" id="toggleGender" data-role="slider" style="width:100px">
+					<option value="female">Female</option>
+					<option value="male">Male</option>
+				</select>
+			</div>
+			<div data-role="fieldcontain">
+				<label for="levelSlider">Level:</label>
+				<input type="range" name="specimenLevel" id="levelSlider" min="1" max="100" />
+			</div>
+			<div data-role="fieldcontain">
+				<label>Location Caught:</label><br />
+				<div id="divLocation">
+					Latitude: <span id="spanLatitude"></span><br />
+					Longitude: <span id="spanLongitude"></span>
+				</div>
+				<a data-role="button" data-mini="true" id="btnRecordLocation" onclick="app.setSpecimenLocation()">Record Current Location</a>
+			</div>
+			<div data-role="fieldcontain" class="bottomButtonsDiv">
+				<a data-role="button" data-theme="b" data-transition="fade" href="#specimenList" onclick="app.saveSpecimenInfo()">Submit</a>
+				<a data-role="button" href="#specimenList" data-transition="fade">Cancel</a>
+			</div>
+		</div>
+	</div>
+
+
 	<script type="text/javascript">
 		app.initialize();
-		
     </script>
 </body>
 </html>
