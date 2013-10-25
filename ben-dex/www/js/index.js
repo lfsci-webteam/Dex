@@ -215,8 +215,15 @@ var app = {
 			$.mobile.loading("hide");
 			$(".modalWindow").remove();
 			console.log("GPS Error: " + error.message);
-			alert("GPS Error!");
-			//TODO: could flesh this method out, make it more helpful
+			var errorType = "Unknown GPS Error";
+			if (error.code == PositionError.PERMISSION_DENIED)
+				errorType = "GPS Permission denied.";
+			else if (error.code == PositionError.POSITION_UNAVAILABLE)
+				errorType = "GPS position is unavailable.";
+			else if (error.code == PositionError.TIMEOUT)
+				errorType = "GPS Timeout.";
+
+			alert(errorType + "\n" + error.message);
 		}
 	},
 	
