@@ -115,6 +115,7 @@ var app = {
 
 	loadSpecimenList: function (pkmnId) {
 		$("#hidCurSpeciesForSpecimens").val(pkmnId);
+		//$("#mapLink").attr('href', "map.html?speciesId=" + pkmnId);
 		app.dataSource.getAllSpecimensOfSpecies(pkmnId, loadSpecimenListReturn);
 		app.dataSource.getPokemonInfo(pkmnId, loadSpeciesName);
 
@@ -157,11 +158,15 @@ var app = {
 			$("#levelSlider").val(specimenInfo.level).slider("refresh");
 			if (specimenInfo.latitude && specimenInfo.longitude) {
 				$("#divLocation").show();
-				$("#spanLatitude").html(specimenInfo.latitude);
-				$("#spanLongitude").html(specimenInfo.longitude);
+				$("#hidLatitude").val(specimenInfo.latitude);
+				$("#hidLongitude").val(specimenInfo.longitude);
+				$("#spanLatitude").html(specimenInfo.latitude.toFixed(6));
+				$("#spanLongitude").html(specimenInfo.longitude.toFixed(6));
 			}
 			else {
 				$("#divLocation").hide();
+				$("#hidLatitude").val("");
+				$("#hidLongitude").val("");
 				$("#spanLatitude").html("");
 				$("#spanLongitude").html("");
 			}
@@ -181,10 +186,10 @@ var app = {
 		specimenInfoToUpdate.nickname = $("#txtNickname").val();
 		specimenInfoToUpdate.gender = $("#toggleGender").val();
 		specimenInfoToUpdate.level = $("#levelSlider").val();
-		specimenInfoToUpdate.latitude = $("#spanLatitude").html();
+		specimenInfoToUpdate.latitude = $("#hidLatitude").val();
 		if (specimenInfoToUpdate.latitude == "")
 			specimenInfoToUpdate.latitude = null;
-		specimenInfoToUpdate.longitude = $("#spanLongitude").html();
+		specimenInfoToUpdate.longitude = $("#hidLongitude").val();
 		if (specimenInfoToUpdate.longitude == "")
 			specimenInfoToUpdate.longitude = null;
 
@@ -201,14 +206,16 @@ var app = {
 	setSpecimenLocation: function () {
 		$("body").append('<div class="modalWindow"/>');
 		$.mobile.loading("show");
-		navigator.geolocation.getCurrentPosition(gpsSuccess, gpsError); //TODO: Options?
+		navigator.geolocation.getCurrentPosition(gpsSuccess, gpsError);
 		
 		function gpsSuccess(position) {
 			$.mobile.loading("hide");
 			$(".modalWindow").remove();
 			$("#divLocation").show();
-			$("#spanLatitude").html(position.coords.latitude);
-			$("#spanLongitude").html(position.coords.longitude);
+			$("#hidLatitude").val(position.coords.latitude);
+			$("#hidLongitude").val(position.coords.longitude);
+			$("#spanLatitude").html(position.coords.latitude.toFixed(6));
+			$("#spanLongitude").html(position.coords.longitude.toFixed(6));
 		}
 
 		function gpsError(error) {
@@ -261,7 +268,6 @@ var app = {
 		getPokemonInfo: function (pkmnId, callback) {
 			function selectSinglePkmn(tx) {
 				var query = 'SELECT * FROM PkmnSpecies WHERE id = ?';
-				console.log(query);
 				tx.executeSql(query, [pkmnId], callback); 
 			}
 			db.transaction(selectSinglePkmn, this.dbError);
@@ -271,7 +277,6 @@ var app = {
 			function insertPokemon(tx) {
 				//TODO: Redundancy with database reset?
 				var query = "INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (?, ?, ?, ?, ?)";
-				console.log(query);
 				tx.executeSql(query, [pkmnInfo.id, pkmnInfo.name, pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2], callback);
 			}
 			db.transaction(insertPokemon, this.dbError);
@@ -282,7 +287,6 @@ var app = {
 				//Since pokemon names and ids are immutable, they are not included in the update clause of the query
 				//However, the input pkmnInfo object still needs to have an id, so we know which row to update
 				var query = 'UPDATE PkmnSpecies SET species=?, type1=?, type2=? WHERE id=?';
-				console.log(query);
 				tx.executeSql(query, [pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2, pkmnInfo.id], callback);
 			}
 			db.transaction(updatePokemon, this.dbError);
@@ -329,50 +333,14 @@ var app = {
 
     	sqlResultToEnumerable: function (sqlResult) {
     		var result = new Array();
-    		console.log("Raw results:");
     		for (var i = 0; i < sqlResult.rows.length; i++) {
     			var temp = sqlResult.rows.item(i);
-    			console.log("#" + temp.id + " " + temp.name + " " + temp.species + " " + temp.type1 + " " + temp.type2);
     			result[i] = sqlResult.rows.item(i);
     		}
     		return $.Enumerable.From(result);
     	}
 
     },
-
-
-    oldDataSource: {
-		
-    	initialize: function () {
-    		if(!window.localStorage.pokedexSpecies)
-	    		window.localStorage.pokedexSpecies = JSON.stringify(initDb);
-    	},
-
-    	getAllPokemon: function () {
-    		return $.Enumerable.From(JSON.parse(window.localStorage.pokedexSpecies));
-    	},
-
-    	getPokemonInfo: function (pkmnId) {
-    		return this.getAllPokemon().Single("$.id==" + pkmnId);
-    	},
-
-    	savePokemonInfo: function (pkmnInfo) {
-    		var allPokemon = this.getAllPokemon();
-    		var speciesArray = allPokemon.ToArray();
-    		var oldPkmnInfo = allPokemon.SingleOrDefault(null, "$.id==" + pkmnInfo.id);
-    		if (oldPkmnInfo == null) {
-    			speciesArray.push(pkmnInfo);
-    		}
-    		else {
-    			var oldPkmnInfoIndex = allPokemon.IndexOf(oldPkmnInfo);
-    			speciesArray[oldPkmnInfoIndex] = pkmnInfo;
-    		}
-
-    		window.localStorage.pokedexSpecies = JSON.stringify(speciesArray);
-    	},
-
-    }
-
 
 };
 
