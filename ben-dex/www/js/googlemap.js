@@ -32,13 +32,17 @@ var mapContext = {
 
 		function placeMarkersReturn(tx, results) {
 			var allSpecimens = app.dataSource.sqlResultToEnumerable(results);
+			var zoomBounds = new google.maps.LatLngBounds();
 			allSpecimens.ForEach(function (specimen) {
+				var coordinates = new google.maps.LatLng(specimen.latitude, specimen.longitude);
 				var curMarker = new google.maps.Marker({
-					position: new google.maps.LatLng(specimen.latitude, specimen.longitude),
-					map: mapContext.map
+					position: coordinates,
+					map: mapContext.map,
 				});
 				markers.push(curMarker);
+				zoomBounds.extend(coordinates);
 			});
+			mapContext.map.fitBounds(zoomBounds);
 		}
 
 	},
