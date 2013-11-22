@@ -18,7 +18,7 @@
 	},
 
 	stopRecording: function () {
-		if (!mediaController) {
+		if (!audioContext.mediaController) {
 			alert("Error: audioContext.stopRecording called while audio was not being recorded");
 			console.log("Error: audioContext.stopRecording called while audio was not being recorded");
 			return;
