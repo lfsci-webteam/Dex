@@ -51,5 +51,4 @@
 	<access origin="*.google.com" />
 	<access origin="*.googleapis.com" />
 	<access origin="*.gstatic.com" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </widget>
