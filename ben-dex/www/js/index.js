@@ -324,7 +324,7 @@ var app = {
 				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER PRIMARY KEY NOT NULL, speciesId INT NOT NULL, nickname CHAR(50) NOT NULL, " +
 					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL, FOREIGN KEY(speciesId) REFERENCES PkmnSpecies(id))");
 
-				tx.executeSql('UPDATE PkmnSpecies SET cryFilePath = ""'); //For now, clear cry file paths each load
+				//tx.executeSql('UPDATE PkmnSpecies SET cryFilePath = ""'); //For now, clear cry file paths each load
 			}
 
 			db.transaction(createTables, this.dbError, callback);

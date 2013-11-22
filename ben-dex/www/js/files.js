@@ -2,11 +2,7 @@
 
 	//Gets or creates a file at a given path, including any directories along the way.
 	getFile: function (path, callback) {
-		if (typeof LocalFileSystem === 'undefined')
-			var PERSISTENT = window.PERSISTENT;
-		else
-			var PERSISTENT = LocalFileSystem.PERSISTENT;
-		window.requestFileSystem(PERSISTENT, 0, haveFileSystem, filesContext.fileError);
+		window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, haveFileSystem, filesContext.fileError);
 
 		function haveFileSystem(fileSystem) {
 			console.log("File System Loaded. Name: " + fileSystem.name);

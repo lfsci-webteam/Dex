@@ -35,7 +35,9 @@
 	},
 
 	getFileExtension: function () {
-		return "wav";
+		if(device.platform == "iOS")
+			return "wav";
+		return "amr";
 	},
 
 	audioError: function(error) {
