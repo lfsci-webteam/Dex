@@ -28,14 +28,13 @@
 	},
 
 	playRecording: function () {
-		//TODO: Plays the file in currentFilename
-		alert("Tweet tweet!\n(" + audioContext.currentFilename + ")");
+		//alert("Tweet tweet!\n(" + audioContext.currentFilename + ")");
 		var media = new Media(audioContext.currentFilename);
+		media.setVolume(1.0);
 		media.play();
 	},
 
 	getFileExtension: function () {
-		//TODO: determines what the audio file extension should be based on the device (no ".")
 		return "wav";
 	},
 
