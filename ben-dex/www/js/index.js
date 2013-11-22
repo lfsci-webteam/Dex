@@ -246,31 +246,46 @@ var app = {
 
 	// Audio
 
-	startRecordingCry: function() {
-		app.makeModal($(".ui-popup-container"));
-		var pkmnId = $("#hidCurPkmnId").val();
-		app.dataSource.getPokemonInfo(pkmnId, startRecordingCryDbReturn);
-		function startRecordingCryDbReturn(tx, results) {
-			var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
-			var filename = padPkmnNumber(pkmnId) + " " + pkmnInfo.name + " Cry." + audioContext.getFileExtension();
-			var filepath = "Dex/Cries/" + filename;
-			audioContext.startRecording(filename);
+	startRecordingCry: function () {
+		try {
+			app.makeModal($(".ui-popup-container"));
+			var pkmnId = $("#hidCurPkmnId").val();
+			app.dataSource.getPokemonInfo(pkmnId, startRecordingCryDbReturn);
+			function startRecordingCryDbReturn(tx, results) {
+				var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
+				var filename = padPkmnNumber(pkmnId) + " " + pkmnInfo.name + " Cry." + audioContext.getFileExtension();
+				var filepath = "Dex/Cries/" + filename;
+				audioContext.startRecording(filename);
+			}
+		}
+		catch (err) {
+			alert(err.message);
 		}
 	},
 
 	stopRecordingCry: function () {
-		app.endModal();
-		audioContext.stopRecording();
-		//Save filename into database (for now, assuming recording always succeeds)
-		var pkmnId = $("#hidCurPkmnId").val();
-		app.dataSource.updatePokemonCry(pkmnId, audioContext.currentFilename, filePathSaved);
-		function filePathSaved(tx, results) {
-			$("#btnPlayCry").show();
+		try {
+			app.endModal();
+			audioContext.stopRecording();
+			//Save filename into database (for now, assuming recording always succeeds)
+			var pkmnId = $("#hidCurPkmnId").val();
+			app.dataSource.updatePokemonCry(pkmnId, audioContext.currentFilename, filePathSaved);
+			function filePathSaved(tx, results) {
+				$("#btnPlayCry").show();
+			}
+		}
+		catch (err) {
+			alert(err.message);
 		}
 	},
 
-	playCry: function() {
-		audioContext.playRecording();
+	playCry: function () {
+		try {
+			audioContext.playRecording();
+		}
+		catch (err) {
+			alert(err.message);
+		}
 	},
 
 	// Modal
@@ -298,7 +313,7 @@ var app = {
 				//tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INT PRIMARY KEY NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
 
-				tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
+				//tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
 
 				//$.Enumerable.From(initDb).ForEach(function (pkmn) {
 				//	tx.executeSql("INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (" + pkmn.id + ", \"" + pkmn.name + "\", \"" + pkmn.species +
