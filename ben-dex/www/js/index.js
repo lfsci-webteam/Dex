@@ -298,7 +298,7 @@ var app = {
 				//tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INT PRIMARY KEY NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
 
-				//tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
+				tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
 
 				//$.Enumerable.From(initDb).ForEach(function (pkmn) {
 				//	tx.executeSql("INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (" + pkmn.id + ", \"" + pkmn.name + "\", \"" + pkmn.species +
