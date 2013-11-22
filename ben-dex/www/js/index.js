@@ -49,8 +49,9 @@ var app = {
 	},
 
 	blankPokemonInfo: function () {
-		$("#divPkmnId").show()
-		$("#divPkmnName").show()
+		$("#divPkmnId").show();
+		$("#divPkmnName").show();
+		$("#cryRecordContainer").hide();
 		$("#txtPkmnId").val("");
 		$("#txtPkmnName").val("");
 		$("#hidCurPkmnId").val("");
@@ -66,10 +67,17 @@ var app = {
 			var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
 			$("#divPkmnId").hide();
 			$("#divPkmnName").hide();
+			$("#cryRecordContainer").show();
 			$("#hidCurPkmnId").val(pkmnInfo.id);
 			$("#pkmnNameHeader").html(formatPkmnNumber(pkmnInfo.id) + " - " + pkmnInfo.name);
 			$("#txtSpecies").val(pkmnInfo.species);
 			app.loadTypes(pkmnInfo.type1, pkmnInfo.type2);
+			if (pkmnInfo.cryFilePath) {
+				$("#btnPlayCry").show();
+				audioContext.currentFilename = pkmnInfo.cryFilePath;
+			}
+			else 
+				$("#btnPlayCry").hide();
 		}
 	},
 
@@ -203,14 +211,16 @@ var app = {
 		}
 	},
 
+	// GPS
+
 	setSpecimenLocation: function () {
-		$("body").append('<div class="modalWindow"/>');
+		app.makeModal();
 		$.mobile.loading("show");
 		navigator.geolocation.getCurrentPosition(gpsSuccess, gpsError);
 		
 		function gpsSuccess(position) {
 			$.mobile.loading("hide");
-			$(".modalWindow").remove();
+			app.endModal();
 			$("#divLocation").show();
 			$("#hidLatitude").val(position.coords.latitude);
 			$("#hidLongitude").val(position.coords.longitude);
@@ -220,7 +230,7 @@ var app = {
 
 		function gpsError(error) {
 			$.mobile.loading("hide");
-			$(".modalWindow").remove();
+			app.endModal();
 			console.log("GPS Error: " + error.message);
 			var errorType = "Unknown GPS Error";
 			if (error.code == PositionError.PERMISSION_DENIED)
@@ -233,7 +243,51 @@ var app = {
 			alert(errorType + "\n" + error.message);
 		}
 	},
-	
+
+	// Audio
+
+	startRecordingCry: function() {
+		app.makeModal($(".ui-popup-container"));
+		var pkmnId = $("#hidCurPkmnId").val();
+		app.dataSource.getPokemonInfo(pkmnId, startRecordingCryDbReturn);
+		function startRecordingCryDbReturn(tx, results) {
+			var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
+			var filename = padPkmnNumber(pkmnId) + " " + pkmnInfo.name + " Cry." + audioContext.getFileExtension();
+			var filepath = "Dex/Cries/" + filename;
+			audioContext.startRecording(filename);
+		}
+	},
+
+	stopRecordingCry: function () {
+		app.endModal();
+		audioContext.stopRecording();
+		//Save filename into database (for now, assuming recording always succeeds)
+		var pkmnId = $("#hidCurPkmnId").val();
+		app.dataSource.updatePokemonCry(pkmnId, audioContext.currentFilename, filePathSaved);
+		function filePathSaved(tx, results) {
+			$("#btnPlayCry").show();
+		}
+	},
+
+	playCry: function() {
+		audioContext.playRecording();
+	},
+
+	// Modal
+
+	makeModal: function (topElement) {
+		if (topElement)
+			topElement.addClass("aboveModal");
+		$("body").append('<div class="modalWindow"/>');
+	},
+
+	endModal: function(topElement) {
+		$(".aboveModal").removeClass("aboveModal");
+		$(".modalWindow").remove();
+	},
+
+	// Database
+
 	dataSource: {
 		db: null,
 
@@ -242,7 +296,9 @@ var app = {
 
 			function createTables(tx) {
 				//tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
-				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INT PRIMARY KEY NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT)");
+				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INT PRIMARY KEY NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
+
+				//tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
 
 				//$.Enumerable.From(initDb).ForEach(function (pkmn) {
 				//	tx.executeSql("INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (" + pkmn.id + ", \"" + pkmn.name + "\", \"" + pkmn.species +
@@ -252,6 +308,8 @@ var app = {
 				//tx.executeSql("DROP TABLE Specimens");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER PRIMARY KEY NOT NULL, speciesId INT NOT NULL, nickname CHAR(50) NOT NULL, " +
 					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL, FOREIGN KEY(speciesId) REFERENCES PkmnSpecies(id))");
+
+				tx.executeSql('UPDATE PkmnSpecies SET cryFilePath = ""'); //For now, clear cry file paths each load
 			}
 
 			db.transaction(createTables, this.dbError, callback);
@@ -276,7 +334,7 @@ var app = {
 		insertPokemonInfo: function (pkmnInfo, callback) {
 			function insertPokemon(tx) {
 				//TODO: Redundancy with database reset?
-				var query = "INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (?, ?, ?, ?, ?)";
+				var query = "INSERT INTO PkmnSpecies (id, name, species, type1, type2, cryFilePath) VALUES (?, ?, ?, ?, ?, NULL)";
 				tx.executeSql(query, [pkmnInfo.id, pkmnInfo.name, pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2], callback);
 			}
 			db.transaction(insertPokemon, this.dbError);
@@ -290,6 +348,14 @@ var app = {
 				tx.executeSql(query, [pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2, pkmnInfo.id], callback);
 			}
 			db.transaction(updatePokemon, this.dbError);
+		},
+
+		updatePokemonCry: function(pkmnId, cryFilePath, callback) {
+			function updateCry(tx) {
+				var query = 'UPDATE PkmnSpecies SET cryFilePath=? WHERE id=?';
+				tx.executeSql(query, [cryFilePath, pkmnId], callback);
+			}
+			db.transaction(updateCry, this.dbError);
 		},
 
 		getAllSpecimensOfSpecies: function (speciesId, callback) {
@@ -344,11 +410,16 @@ var app = {
 
 };
 
-function formatPkmnNumber(num) {
+function padPkmnNumber(num) {
 	var result = num + '';
 	while (result.length < 3) {
 		result = '0' + result;
 	}
+	return result;
+}
+
+function formatPkmnNumber(num) {
+	var result = padPkmnNumber(num);
 	return "#" + result;
 }
 

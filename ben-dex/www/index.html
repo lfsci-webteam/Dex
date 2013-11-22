@@ -22,6 +22,8 @@
 	<!-- Other -->
 	<script type="text/javascript" src="phonegap.js"></script>
 	<script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="js/audio.js"></script>
+	<script type="text/javascript" src="js/files.js"></script>
 	<link rel="stylesheet" type="text/css" href="css/index.css" />
 
 	<title>Pokedex Data Entry</title>
@@ -69,12 +71,29 @@
 				<select name="selectType2" id="selectType2" data-role="select">
 				</select>
 			</div>
+			<div id="cryRecordContainer" data-role="fieldcontain">
+				<label for="btnCry">Cry:</label>
+				<a href="#recordingCry" id="btnCry" onclick="app.startRecordingCry()" data-role="button" data-rel="popup" data-transition="pop">Record Cry</a>
+				<a id="btnPlayCry" data-role="button" onclick="app.playCry()">Play Cry</a>
+
+				<div data-role="popup" id="recordingCry" data-dismissible="false">
+					<div data-role="header">
+						<h2>Recording Cry...</h2>
+					</div>
+					<div data-role="content">
+						<a href="#pkmnDetails" onclick="app.stopRecordingCry()" data-role="button">Stop Recording</a>
+					</div>
+				</div>
+
+			</div>
 			<div data-role="fieldcontain" class="bottomButtonsDiv">
 				<a data-role="button" data-theme="b" data-transition="fade" href="#main" onclick="app.savePokemonInfo()">Submit</a>
 				<a data-role="button" href="#main" data-transition="fade">Cancel</a>
 			</div>
 		</div>
 	</div>
+
+	
 
 	<div data-role="page" id="specimenList">
 		<div data-role="header">

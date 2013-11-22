@@ -47,6 +47,10 @@ body {
     background: white;
     opacity: 0.7;
 }
+.aboveModal
+{
+	z-index: 1501;
+}
 .ui-loader
 {
 	z-index: 1501;
