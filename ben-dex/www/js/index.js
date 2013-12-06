@@ -407,6 +407,24 @@ var app = {
 			db.transaction(updateTransaction, this.dbError);
 		},
 
+		loadData: function (data) {
+			//TODO: Tables here will need to maintain a ServerId. This field will be null until the record has been uploaded to the server, at which point, a 
+			//subsequent update to local data will return the objects with server IDs assigned. The server id is the database id of the record on the server, and 
+			//is a unique identifier against all apps interacting with the server. 
+
+			//For each record in data
+				//If a local record exists with the same serverId, update the local record
+				//Otherwise, insert that record locally
+
+			//TODO: how do we handle conflicts? i.e. I've made changes to a record I got from the server, but someone else has made different changes to that record,
+			//and has synced it with the server before me. Perhaps all records have owners: only the owner of a record can update it. 
+		},
+
+		allDataToJson: function() {
+			//TODO: Bundle all data in the local sqlite database into a json object to be sent to a server. 
+			//TODO: It may not belong to this method, but somewhere, pokemon cries will need to by synced as well, which will involve file transfer
+		},
+
     	dbError: function (error) {
     		alert("Database Error! (see console)");
     		console.log("Code: " + error.code + " Message: " + error.message);
