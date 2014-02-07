@@ -19,6 +19,9 @@
 	<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
 	<script type="text/javascript" src="js/googlemap.js"></script>
 
+	<!-- WebSQLSync -->
+	<script type="text/javascript" src="js/webSqlSync_Custom.js"></script>
+
 	<!-- Other -->
 	<script type="text/javascript" src="phonegap.js"></script>
 	<script type="text/javascript" src="js/index.js"></script>
@@ -40,6 +43,11 @@
 				<!--data-filter='true'-->
 			</ul>
 		</div>
+		<div data-role="footer" data-position="fixed">
+			<div style="padding:0 7px">
+				<a id="btnSync" data-role="button" data-inline="false" onclick="app.dataSource.syncData()">Sync Now</a>
+			</div>
+		</div>
 
 	</div>
 
@@ -49,6 +57,7 @@
 		</div>
 		<div data-role="content" class="standardBody">
 			<input type="hidden" id="hidCurPkmnId" name="hidCurPkmnId" />
+			<input type="hidden" id="hidCurPkmnDeviceId" name="hidCurPkmnDeviceId" />
 			<div data-role="fieldcontain" id="divPkmnId">
 				<label for="txtPkmnId">ID Number:</label>
 				<input type="number" name="pkmnId" pattern="[0-9]*" id="txtPkmnId" />
@@ -102,6 +111,7 @@
 		</div>
 		<div data-role="content" class="standardBody">
 			<input type="hidden" id="hidCurSpeciesForSpecimens" name="curSpeciesForSpecimens" />
+			<input type="hidden" id="hidCurSpeciesForSpecimensDeviceId" name="hidCurSpeciesForSpecimensDeviceId" />
 			<a href="#specimenDetails" data-role="button" data-mini="true" data-transition="fade" onclick="app.blankSpecimenInfo()">New specimen</a>
 			<a id="mapLink" href="map.html" data-role="button" data-mini="true" data-transition="fade">View capture locations map</a>
 			<ul id="ulSpecimenList" data-role='listview' data-inset='true' class='pokedexList'>
@@ -116,6 +126,7 @@
 		</div>
 		<div data-role="content" class="standardBody">
 			<input type="hidden" id="hidCurSpecimenId" name="hidCurSpecimenId" />
+			<input type="hidden" id="hidCurSpecimenDeviceId" name="hidCurSpecimenDeviceId" />
 			<div data-role="fieldcontain">
 				<label for="txtNickname">Nickname:</label>
 				<input type="text" name="nickname" id="txtNickname" />

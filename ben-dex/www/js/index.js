@@ -27,7 +27,11 @@ var app = {
 	// The scope of 'this' is the event. In order to call the 'receivedEvent'
 	// function, we must explicity call 'app.receivedEvent(...);'
 	onDeviceReady: function () {
-		app.dataSource.initialize(app.loadPokemonList);
+		app.dataSource.initialize(app.onDbInit);
+	},
+
+	onDbInit: function() {
+		app.dataSource.initSync(app.loadPokemonList);
 	},
 	
 	loadPokemonList: function () {
@@ -39,9 +43,10 @@ var app = {
 
 			list.empty();
 			allPokemon.ForEach(function (pkmn) {
-				var mainLinkString = "<a href='#pkmnDetails' data-transition='fade' onclick='app.loadPokemonInfo(" + pkmn.id + ")'>" +
+				var mainLinkString = "<a href='#pkmnDetails' data-transition='fade' onclick=\"app.loadPokemonInfo(" + pkmn.id + ", '" + pkmn.deviceId + "')\">" +
 					formatPkmnNumber(pkmn.id) + " " + pkmn.name + "</a>";
-				var specimensLinkString = "<a href='#specimenList' data-transition='slidefade' onclick='app.loadSpecimenList(" + pkmn.id + ")'>Specimens</a>";
+				var specimensLinkString = "<a href='#specimenList' data-transition='slidefade' onclick=\"app.loadSpecimenList(" + pkmn.id + ", '" + pkmn.deviceId +
+					"')\">Specimens</a>";
 				list.append("<li>" + mainLinkString + specimensLinkString + "</li>");
 			});
 			list.listview("refresh");
@@ -55,13 +60,14 @@ var app = {
 		$("#txtPkmnId").val("");
 		$("#txtPkmnName").val("");
 		$("#hidCurPkmnId").val("");
+		$("#hidCurPkmnDeviceId").val("");
 		$("#pkmnNameHeader").html("New Entry");
 		$("#txtSpecies").val("");
 		app.loadTypes(TYPES.Normal, TYPES.None);
 	},
 
-	loadPokemonInfo: function (pkmnId) {
-		app.dataSource.getPokemonInfo(pkmnId, getPkmnInfoReturn);
+	loadPokemonInfo: function (pkmnId, pkmnDeviceId) {
+		app.dataSource.getPokemonInfo(pkmnId, pkmnDeviceId, getPkmnInfoReturn);
 
 		function getPkmnInfoReturn(tx, results) {
 			var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
@@ -69,6 +75,7 @@ var app = {
 			$("#divPkmnName").hide();
 			$("#cryRecordContainer").show();
 			$("#hidCurPkmnId").val(pkmnInfo.id);
+			$("#hidCurPkmnDeviceId").val(pkmnInfo.deviceId);
 			$("#pkmnNameHeader").html(formatPkmnNumber(pkmnInfo.id) + " - " + pkmnInfo.name);
 			$("#txtSpecies").val(pkmnInfo.species);
 			app.loadTypes(pkmnInfo.type1, pkmnInfo.type2);
@@ -102,15 +109,18 @@ var app = {
 
 	savePokemonInfo: function() {
 		var pkmnId = $("#hidCurPkmnId").val();
+		var pkmnDeviceId = $("#hidCurPkmnDeviceId").val();
 		var pkmnInfoToUpdate = {};
-		var isInsert = pkmnId == "";
+		var isInsert = pkmnId == ""; //Id alone is a sufficient test for insert vs update
 		if (isInsert) {
 			pkmnInfoToUpdate.id = $("#txtPkmnId").val();
+			pkmnInfoToUpdate.deviceId = app.getDeviceId();
 			pkmnInfoToUpdate.name = $("#txtPkmnName").val();
 		}
 		else {
-			pkmnInfoToUpdate.id = pkmnId; //This is so we know what row to update
-			//No point assigning a name, since names are immutable
+			pkmnInfoToUpdate.id = pkmnId; //These are included so we know what row to update
+			pkmnInfoToUpdate.deviceId = pkmnDeviceId;
+			//No point assigning a name, since those are immutable
 		}
 		pkmnInfoToUpdate.species = $("#txtSpecies").val();
 		pkmnInfoToUpdate.type1 = $("#selectType1").val();
@@ -121,11 +131,12 @@ var app = {
 			app.dataSource.updatePokemonInfo(pkmnInfoToUpdate, app.loadPokemonList);
 	},
 
-	loadSpecimenList: function (pkmnId) {
+	loadSpecimenList: function (pkmnId, pkmnDeviceId) {
 		$("#hidCurSpeciesForSpecimens").val(pkmnId);
+		$("#hidCurSpeciesForSpecimensDeviceId").val(pkmnDeviceId);
 		//$("#mapLink").attr('href', "map.html?speciesId=" + pkmnId);
-		app.dataSource.getAllSpecimensOfSpecies(pkmnId, loadSpecimenListReturn);
-		app.dataSource.getPokemonInfo(pkmnId, loadSpeciesName);
+		app.dataSource.getAllSpecimensOfSpecies(pkmnId, pkmnDeviceId, loadSpecimenListReturn);
+		app.dataSource.getPokemonInfo(pkmnId, pkmnDeviceId, loadSpeciesName);
 
 		function loadSpecimenListReturn(tx, results) {
 			var allSpecimens = app.dataSource.sqlResultToEnumerable(results);
@@ -133,7 +144,7 @@ var app = {
 
 			list.empty();
 			allSpecimens.ForEach(function (specimen) {
-				list.append("<li><a href='#specimenDetails' data-transition='fade' onclick='app.loadSpecimenInfo(" + specimen.id + ")'>" +
+				list.append("<li><a href='#specimenDetails' data-transition='fade' onclick='app.loadSpecimenInfo(" + specimen.id + ", '" + specimen.deviceId + "')'>" +
 					specimen.nickname + " Lv " + specimen.level + "</a></li>");
 			});
 			list.listview("refresh");
@@ -149,18 +160,20 @@ var app = {
 	blankSpecimenInfo: function() {
 		$("#divLocation").hide();
 		$("#hidCurSpecimenId").val("");
+		$("#hidCurSpecimenDeviceId").val("");
 		$("#txtNickname").val("");
 		$("#toggleGender").val("male");
 		$("#levelSlider").val("5")//.slider("refresh"); //TODO
 		
 	},
 
-	loadSpecimenInfo: function (specimenId) {
-		app.dataSource.getSpecimenInfo(specimenId, loadSpecimenInfoReturn);
+	loadSpecimenInfo: function (specimenId, specimenDeviceId) {
+		app.dataSource.getSpecimenInfo(specimenId, specimenDeviceId, loadSpecimenInfoReturn);
 
 		function loadSpecimenInfoReturn(tx, results) {
 			var specimenInfo = app.dataSource.sqlResultToEnumerable(results).Single();
 			$("#hidCurSpecimenId").val(specimenInfo.id);
+			$("#hidCurSpecimenDeviceId").val(specimenInfo.deviceId);
 			$("#txtNickname").val(specimenInfo.nickname);
 			$("#toggleGender").val(specimenInfo.gender).slider("refresh");
 			$("#levelSlider").val(specimenInfo.level).slider("refresh");
@@ -183,13 +196,16 @@ var app = {
 
 	saveSpecimenInfo: function () {
 		var specimenId = $("#hidCurSpecimenId").val();
+		var specimenDeviceId = $("#hidCurSpecimenDeviceId").val();
 		var specimenInfoToUpdate = {};
-		var isInsert = specimenId == "";
+		var isInsert = specimenId == ""; //ID alone is sufficient for insert vs update test
 		if (isInsert) {
 			specimenInfoToUpdate.speciesId = $("#hidCurSpeciesForSpecimens").val();
+			specimenInfoToUpdate.speciesDeviceId = $("#hidCurSpeciesForSpecimensDeviceId").val();
 		}
 		else {
 			specimenInfoToUpdate.id = specimenId;
+			specimenInfoToUpdate.deviceId = specimenDeviceId;
 		}
 		specimenInfoToUpdate.nickname = $("#txtNickname").val();
 		specimenInfoToUpdate.gender = $("#toggleGender").val();
@@ -207,7 +223,7 @@ var app = {
 			app.dataSource.updateSpecimen(specimenInfoToUpdate, saveSpecimenCallback);
 
 		function saveSpecimenCallback(tx, results) {
-			app.loadSpecimenList($("#hidCurSpeciesForSpecimens").val());
+			app.loadSpecimenList($("#hidCurSpeciesForSpecimens").val(), $("#hidCurSpeciesForSpecimensDeviceId").val());
 		}
 	},
 
@@ -250,10 +266,11 @@ var app = {
 		try {
 			app.makeModal($(".ui-popup-container"));
 			var pkmnId = $("#hidCurPkmnId").val();
-			app.dataSource.getPokemonInfo(pkmnId, startRecordingCryDbReturn);
+			var pkmnDeviceId = $("#hidCurPkmnDeviceId").val();
+			app.dataSource.getPokemonInfo(pkmnId, pkmnDeviceId, startRecordingCryDbReturn);
 			function startRecordingCryDbReturn(tx, results) {
 				var pkmnInfo = app.dataSource.sqlResultToEnumerable(results).Single();
-				var filename = padPkmnNumber(pkmnId) + " " + pkmnInfo.name + " Cry." + audioContext.getFileExtension();
+				var filename = padPkmnNumber(pkmnId) + " " + pkmnInfo.name + " Cry (" + pkmnDeviceId + ")." + audioContext.getFileExtension();
 				var filepath = "Dex/Cries/" + filename;
 				audioContext.startRecording(filename);
 			}
@@ -269,7 +286,8 @@ var app = {
 			audioContext.stopRecording();
 			//Save filename into database (for now, assuming recording always succeeds)
 			var pkmnId = $("#hidCurPkmnId").val();
-			app.dataSource.updatePokemonCry(pkmnId, audioContext.currentFilename, filePathSaved);
+			var pkmnDeviceId = $("#hidCurPkmnDeviceId").val();
+			app.dataSource.updatePokemonCry(pkmnId, pkmnDeviceId, audioContext.currentFilename, filePathSaved);
 			function filePathSaved(tx, results) {
 				$("#btnPlayCry").show();
 			}
@@ -301,6 +319,12 @@ var app = {
 		$(".modalWindow").remove();
 	},
 
+	// Device ID
+
+	getDeviceId: function () {
+		return device.uuid;
+	},
+
 	// Database
 
 	dataSource: {
@@ -311,7 +335,7 @@ var app = {
 
 			function createTables(tx) {
 				//tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
-				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INT PRIMARY KEY NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
+				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INTEGER NOT NULL, deviceId CHAR NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
 
 				//tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
 
@@ -320,28 +344,45 @@ var app = {
 				//		"\", " + pkmn.type1 + ", " + pkmn.type2 + ")");
 				//});
 
-				//tx.executeSql("DROP TABLE Specimens");
-				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER PRIMARY KEY NOT NULL, speciesId INT NOT NULL, nickname CHAR(50) NOT NULL, " +
-					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL, FOREIGN KEY(speciesId) REFERENCES PkmnSpecies(id))");
+				//tx.executeSql("DROP TABLE IF EXISTS Specimens");
+				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER NOT NULL, deviceId CHAR NOT NULL, speciesId INT NOT NULL, speciesDeviceId CHAR NOT NULL, nickname CHAR(50) NOT NULL, " +
+					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL)");
 
-				//tx.executeSql('UPDATE PkmnSpecies SET cryFilePath = ""'); //For now, clear cry file paths each load
+				//tx.executeSql('UPDATE PkmnSpecies SET cryFilePath = ""'); //Uncomment to clear cry file paths each load
+
+				//Initialize specimen nextId
+				if (!window.localStorage.getItem("nextSpecimenId")) {
+					window.localStorage.setItem("nextSpecimenId", 1);
+				}
 			}
 
 			db.transaction(createTables, this.dbError, callback);
 		},
 
+		initSync: function (callback) {
+			tablesToSync = [
+					{tableName: 'PkmnSpecies', idName: 'id'},
+					{tableName: 'Specimens', idName: 'id'}
+			];
+			syncInfo = {
+				deviceId: app.getDeviceId(),
+			};
+			DBSYNC.initSync(tablesToSync, db, syncInfo, "http://mrfreeze.byu.local/DexServer/DexSyncService.svc/rest/SyncData", callback);
+		},
+
 		getAllPokemon: function (callback) {
 			function selectAll(tx) {
-				tx.executeSql('SELECT name, id FROM PkmnSpecies', [], callback);
+				tx.executeSql('SELECT name, id, deviceId FROM PkmnSpecies', [], callback);
 			}
 
 			db.transaction(selectAll, this.dbError);
 		},
 
-		getPokemonInfo: function (pkmnId, callback) {
+		getPokemonInfo: function (pkmnId, pkmnDeviceId, callback) {
 			function selectSinglePkmn(tx) {
-				var query = 'SELECT * FROM PkmnSpecies WHERE id = ?';
-				tx.executeSql(query, [pkmnId], callback); 
+				var query = 'SELECT * FROM PkmnSpecies WHERE id = ? AND deviceId = ?';
+				console.log(query + "\nid=" + pkmnId + "\ndeviceId=" + pkmnDeviceId);
+				tx.executeSql(query, [pkmnId, pkmnDeviceId.toString()], callback); 
 			}
 			db.transaction(selectSinglePkmn, this.dbError);
 		},
@@ -349,8 +390,8 @@ var app = {
 		insertPokemonInfo: function (pkmnInfo, callback) {
 			function insertPokemon(tx) {
 				//TODO: Redundancy with database reset?
-				var query = "INSERT INTO PkmnSpecies (id, name, species, type1, type2, cryFilePath) VALUES (?, ?, ?, ?, ?, NULL)";
-				tx.executeSql(query, [pkmnInfo.id, pkmnInfo.name, pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2], callback);
+				var query = "INSERT INTO PkmnSpecies (id, deviceId, name, species, type1, type2, cryFilePath) VALUES (?, ?, ?, ?, ?, ?, NULL)";
+				tx.executeSql(query, [pkmnInfo.id, pkmnInfo.deviceId.toString(), pkmnInfo.name, pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2], callback);
 			}
 			db.transaction(insertPokemon, this.dbError);
 		},
@@ -359,70 +400,66 @@ var app = {
 			function updatePokemon(tx) {
 				//Since pokemon names and ids are immutable, they are not included in the update clause of the query
 				//However, the input pkmnInfo object still needs to have an id, so we know which row to update
-				var query = 'UPDATE PkmnSpecies SET species=?, type1=?, type2=? WHERE id=?';
-				tx.executeSql(query, [pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2, pkmnInfo.id], callback);
+				var query = 'UPDATE PkmnSpecies SET species=?, type1=?, type2=? WHERE id=? AND deviceId=?';
+				tx.executeSql(query, [pkmnInfo.species, pkmnInfo.type1, pkmnInfo.type2, pkmnInfo.id, pkmnInfo.deviceId.toString()], callback);
 			}
 			db.transaction(updatePokemon, this.dbError);
 		},
 
-		updatePokemonCry: function(pkmnId, cryFilePath, callback) {
+		updatePokemonCry: function(pkmnId, pkmnDeviceId, cryFilePath, callback) {
 			function updateCry(tx) {
-				var query = 'UPDATE PkmnSpecies SET cryFilePath=? WHERE id=?';
-				tx.executeSql(query, [cryFilePath, pkmnId], callback);
+				var query = 'UPDATE PkmnSpecies SET cryFilePath=? WHERE id=? AND deviceId=?';
+				tx.executeSql(query, [cryFilePath, pkmnId, pkmnDeviceId.toString()], callback);
 			}
 			db.transaction(updateCry, this.dbError);
 		},
 
-		getAllSpecimensOfSpecies: function (speciesId, callback) {
+		getAllSpecimensOfSpecies: function (speciesId, speciesDeviceId, callback) {
 			function transactionFunction(tx) {
-				var query = 'SELECT * FROM Specimens WHERE speciesId = ?';
-				tx.executeSql(query, [speciesId], callback);
+				var query = 'SELECT * FROM Specimens WHERE speciesId = ? AND speciesDeviceId=?';
+				tx.executeSql(query, [speciesId, speciesDeviceId.toString()], callback);
 			}
 			db.transaction(transactionFunction, this.dbError);
 		},
 
-		getSpecimenInfo: function (specimenId, callback) {
+		getSpecimenInfo: function (specimenId, specimenDeviceId, callback) {
 			function transactionFunction(tx) {
-				var query = 'SELECT * FROM Specimens WHERE id = ?';
-				tx.executeSql(query, [specimenId], callback);
+				var query = 'SELECT * FROM Specimens WHERE id = ? AND deviceId = ?';
+				tx.executeSql(query, [specimenId, specimenDeviceId.toString()], callback);
 			}
 			db.transaction(transactionFunction, this.dbError);
 		},
 
 		insertSpecimen: function (specimenInfo, callback) {
 			function insertTransaction(tx) {
-				var query = "INSERT INTO Specimens (speciesId, nickname, gender, level, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
-				tx.executeSql(query, [specimenInfo.speciesId, specimenInfo.nickname, specimenInfo.gender, specimenInfo.level, specimenInfo.latitude,
-					specimenInfo.longitude], callback);
+				var query = "INSERT INTO Specimens (id, deviceId, speciesId, speciesDeviceId, nickname, gender, level, latitude, longitude) " +
+					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				tx.executeSql(query, [app.dataSource.getNextSpecimenId(), app.getDeviceId(), specimenInfo.speciesId, specimenInfo.speciesDeviceId.toString(),
+					specimenInfo.nickname, specimenInfo.gender,	specimenInfo.level, specimenInfo.latitude, specimenInfo.longitude], callback);
 			}
 			db.transaction(insertTransaction, this.dbError);
 		},
 
 		updateSpecimen: function (specimenInfo, callback) {
 			function updateTransaction(tx) {
-				var query = "UPDATE Specimens SET nickname=?, gender=?, level=?, latitude=?, longitude=? WHERE id=?";
-				tx.executeSql(query, [specimenInfo.nickname, specimenInfo.gender, specimenInfo.level, specimenInfo.latitude, specimenInfo.longitude, specimenInfo.id],
-					callback);
+				var query = "UPDATE Specimens SET nickname=?, gender=?, level=?, latitude=?, longitude=? WHERE id=? AND deviceId=?";
+				tx.executeSql(query, [specimenInfo.nickname, specimenInfo.gender, specimenInfo.level, specimenInfo.latitude, specimenInfo.longitude,
+					specimenInfo.id, specimenInfo.deviceId.toString()], callback);
 			}
 			db.transaction(updateTransaction, this.dbError);
 		},
 
-		loadData: function (data) {
-			//TODO: Tables here will need to maintain a ServerId. This field will be null until the record has been uploaded to the server, at which point, a 
-			//subsequent update to local data will return the objects with server IDs assigned. The server id is the database id of the record on the server, and 
-			//is a unique identifier against all apps interacting with the server. 
-
-			//For each record in data
-				//If a local record exists with the same serverId, update the local record
-				//Otherwise, insert that record locally
-
-			//TODO: how do we handle conflicts? i.e. I've made changes to a record I got from the server, but someone else has made different changes to that record,
-			//and has synced it with the server before me. Perhaps all records have owners: only the owner of a record can update it. 
-		},
-
-		allDataToJson: function() {
-			//TODO: Bundle all data in the local sqlite database into a json object to be sent to a server. 
-			//TODO: It may not belong to this method, but somewhere, pokemon cries will need to by synced as well, which will involve file transfer
+		syncData: function () {
+			function syncProgress(message, percent, msgKey) {
+				console.log("Sync Progress: " + message + " (" + percent + "%)");
+			}
+			function syncComplete(result) {
+				if (result.syncOK === true)
+					alert("Sync finished!");
+				else
+					alert("Sync failed...");
+			}
+			DBSYNC.syncNow(syncProgress, syncComplete);
 		},
 
     	dbError: function (error) {
@@ -437,7 +474,14 @@ var app = {
     			result[i] = sqlResult.rows.item(i);
     		}
     		return $.Enumerable.From(result);
-    	}
+    	},
+
+    	getNextSpecimenId: function () {
+			//TODO: It would probably be preferable to have this be a settings table. Maybe?
+			var nextId = parseInt(window.localStorage.getItem("nextSpecimenId"));
+			window.localStorage.setItem("nextSpecimenId", nextId + 1);
+			return nextId;
+		}
 
     },
 
@@ -455,48 +499,3 @@ function formatPkmnNumber(num) {
 	var result = padPkmnNumber(num);
 	return "#" + result;
 }
-
-var initDb = [
-	{
-		id: 2,
-		name: "Ivysaur",
-		species: "Seed",
-		type1: TYPES.Grass,
-		type2: TYPES.Poison
-	},
-	{
-		id: 6,
-		name: "Charizard",
-		species: "Flame",
-		type1: TYPES.Fire,
-		type2: TYPES.Flying
-	},
-	{
-		id: 7,
-		name: "Squirtle",
-		species: "Tiny Turtle",
-		type1: TYPES.Water,
-		type2: TYPES.None
-	},
-	{
-		id: 33,
-		name: "Nidorino",
-		species: "Poison Pin",
-		type1: TYPES.Poison,
-		type2: TYPES.None
-	},
-	{
-		id: 104,
-		name: "Cubone",
-		species: "Lonely",
-		type1: TYPES.Ground,
-		type2: TYPES.None
-	},
-	{
-		id: 135,
-		name: "Jolteon",
-		species: "Lightning",
-		type1: TYPES.Electric,
-		type2: TYPES.None
-	}
-];

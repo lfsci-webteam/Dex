@@ -24,6 +24,7 @@
 			return;
 		}
 		audioContext.mediaController.stopRecord();
+		audioContext.mediaController.release();
 		audioContext.mediaController = null;
 	},
 
