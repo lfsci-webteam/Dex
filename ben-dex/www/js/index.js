@@ -360,6 +360,15 @@ var app = {
 		},
 
 		initSync: function (callback) {
+			DBSYNC.log = function(message) {
+				var curContents = $("#divMakeshiftLog").html();
+				$("#divMakeshiftLog").html(curContents + message + "<br/>");
+			};
+			DBSYNC.error = function (message) {
+				var curContents = $("#divMakeshiftLog").html();
+				$("#divMakeshiftLog").html(curContents + "<span style=\"color:red\">" + colormessage + "</span><br/>");
+			};
+
 			tablesToSync = [
 					{tableName: 'PkmnSpecies', idName: 'id'},
 					{tableName: 'Specimens', idName: 'id'}
