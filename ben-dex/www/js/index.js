@@ -144,7 +144,7 @@ var app = {
 
 			list.empty();
 			allSpecimens.ForEach(function (specimen) {
-				list.append("<li><a href='#specimenDetails' data-transition='fade' onclick='app.loadSpecimenInfo(" + specimen.id + ", '" + specimen.deviceId + "')'>" +
+				list.append("<li><a href='#specimenDetails' data-transition='fade' onclick=\"app.loadSpecimenInfo(" + specimen.id + ", '" + specimen.deviceId + "')\">" +
 					specimen.nickname + " Lv " + specimen.level + "</a></li>");
 			});
 			list.listview("refresh");
@@ -334,17 +334,9 @@ var app = {
 			db = window.openDatabase("Dex", "1.0", "DexDb", 1000000); //1 MB database
 
 			function createTables(tx) {
-				//tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
+				
+				//app.dataSource.reset(tx);
 				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INTEGER NOT NULL, deviceId CHAR NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
-
-				//tx.executeSql("ALTER TABLE PkmnSpecies ADD COLUMN cryFilePath CHAR(200)");
-
-				//$.Enumerable.From(initDb).ForEach(function (pkmn) {
-				//	tx.executeSql("INSERT INTO PkmnSpecies (id, name, species, type1, type2) VALUES (" + pkmn.id + ", \"" + pkmn.name + "\", \"" + pkmn.species +
-				//		"\", " + pkmn.type1 + ", " + pkmn.type2 + ")");
-				//});
-
-				//tx.executeSql("DROP TABLE IF EXISTS Specimens");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER NOT NULL, deviceId CHAR NOT NULL, speciesId INT NOT NULL, speciesDeviceId CHAR NOT NULL, nickname CHAR(50) NOT NULL, " +
 					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL)");
 
@@ -357,6 +349,12 @@ var app = {
 			}
 
 			db.transaction(createTables, this.dbError, callback);
+		},
+
+		reset: function(tx) {
+			tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
+			tx.executeSql("DROP TABLE IF EXISTS Specimens");
+			window.localStorage.setItem("nextSpecimenId", 1);
 		},
 
 		initSync: function (callback) {
@@ -377,6 +375,7 @@ var app = {
 				deviceId: app.getDeviceId(),
 			};
 			DBSYNC.initSync(tablesToSync, db, syncInfo, "http://mrfreeze.byu.local/DexServer/DexSyncService.svc/rest/SyncData", callback);
+			//DBSYNC.setFirstSync(); //Uncomment to force a full database update
 		},
 
 		getAllPokemon: function (callback) {
@@ -463,8 +462,10 @@ var app = {
 				console.log("Sync Progress: " + message + " (" + percent + "%)");
 			}
 			function syncComplete(result) {
-				if (result.syncOK === true)
+				if (result.syncOK === true) {
+					app.loadPokemonList();
 					alert("Sync finished!");
+				}
 				else
 					alert("Sync failed...");
 			}
