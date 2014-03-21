@@ -335,7 +335,7 @@ var app = {
 
 			function createTables(tx) {
 				
-				//app.dataSource.reset(tx);
+				app.dataSource.reset(tx);
 				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INTEGER NOT NULL, deviceId CHAR NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER NOT NULL, deviceId CHAR NOT NULL, speciesId INT NOT NULL, speciesDeviceId CHAR NOT NULL, nickname CHAR(50) NOT NULL, " +
 					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL)");
@@ -354,6 +354,9 @@ var app = {
 		reset: function(tx) {
 			tx.executeSql("DROP TABLE IF EXISTS PkmnSpecies");
 			tx.executeSql("DROP TABLE IF EXISTS Specimens");
+			tx.executeSql("DROP TABLE IF EXISTS new_elem");
+			tx.executeSql("DROP TABLE IF EXISTS new_elem_ids");
+			tx.executeSql("DROP TABLE IF EXISTS sync_info");
 			window.localStorage.setItem("nextSpecimenId", 1);
 		},
 
@@ -368,8 +371,8 @@ var app = {
 			//};
 
 			tablesToSync = [
-					{tableName: 'PkmnSpecies', idName: 'id'},
-					{tableName: 'Specimens', idName: 'id'}
+					{ tableName: 'PkmnSpecies', idNames: ['id', 'deviceId'] },
+					{ tableName: 'Specimens', idNames: ['id', 'deviceId'] }
 			];
 			syncInfo = {
 				deviceId: app.getDeviceId(),
