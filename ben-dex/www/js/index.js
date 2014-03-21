@@ -335,7 +335,7 @@ var app = {
 
 			function createTables(tx) {
 				
-				app.dataSource.reset(tx);
+				//app.dataSource.reset(tx);
 				tx.executeSql("CREATE TABLE IF NOT EXISTS PkmnSpecies(id INTEGER NOT NULL, deviceId CHAR NOT NULL, name CHAR(50) NOT NULL, species CHAR(70) NOT NULL, type1 INT NOT NULL, type2 INT, cryFilePath CHAR(200))");
 				tx.executeSql("CREATE TABLE IF NOT EXISTS Specimens(id INTEGER NOT NULL, deviceId CHAR NOT NULL, speciesId INT NOT NULL, speciesDeviceId CHAR NOT NULL, nickname CHAR(50) NOT NULL, " +
 					"gender CHAR(10) NOT NULL, level INT NOT NULL, latitude REAL, longitude REAL)");
